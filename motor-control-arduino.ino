@@ -1,51 +1,91 @@
-int led1=2;
-int led2=4;
-int direction1=10;  // Pin 2 of L293D
-int direction2=11;  // Pin 7 of L293D
-int stop1=12;
-int stop2=13;
+int        ledUp=2;
+int      ledDown=4;
+
+int      buttonA=5;
+int      buttonB=7;
+int      buttonC=8;
+
+int      motorUp=10; // Pin 2 of L293D
+int    motorDown=11; // Pin 7 of L293D
+
+int    switchTop=12;
+int switchBottom=13;
 
 void setup()
 {
-  pinMode(motor1, OUTPUT);
-  pinMode(motor2, OUTPUT);
-  pinMode(stop1, OUTPUT);
-  pinMode(stop2, OUTPUT);
-  pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);
+    // Motor, switches & leds
+    pinMode(motorUp, OUTPUT);
+    pinMode(motorDown, OUTPUT);
+    pinMode(switchTop, OUTPUT);
+    pinMode(switchBottom, OUTPUT);
+    pinMode(ledUp, OUTPUT);
+    pinMode(ledDown, OUTPUT);
 
-  Serial.begin (9600);
-  for (int i = 5 ; i <= 8 ; i++)
-    pinMode(i, INPUT) ;
+    // Remote control
+    pinMode(buttonA, INPUT);
+    pinMode(buttonB, INPUT);
+    pinMode(buttonC, INPUT);
+
+    Serial.begin (9600);
 }
  
 void loop()
 {
-    if (digitalRead(5)) {
-        Serial.println( "Button A");
-        digitalWrite(direction1,LOW);
-        digitalWrite(direction2,HIGH);
-        digitalWrite(led1,HIGH);
-        digitalWrite(led2,LOW);
-    } else if (digitalRead(7)) {
-        Serial.println( "Button B");
-        digitalWrite(direction1,HIGH);
-        digitalWrite(direction2,LOW);
-        digitalWrite(led1,LOW);
-        digitalWrite(led2,HIGH);
-    } else if (digitalRead(8)) {
-        Serial.println( "Button C");
-        digitalWrite(direction1,LOW);
-        digitalWrite(direction2,LOW);
-        digitalWrite(led1,LOW);
-        digitalWrite(led2,LOW);
+    if (digitalRead(buttonA)) {
+        Serial.println("Button A, door down");
+        doorDown();
+    }
+    if (digitalRead(buttonB)) {
+        Serial.println("Button B, door up");
+        doorUp();
+    }
+    if (digitalRead(buttonC)) {
+        Serial.println("Button C, door stop");
+        doorStop();
     }
 
-  if (digitalRead(stop1) == LOW || digitalRead(stop2) == LOW) {
-    Serial.println("HOLA");
-    digitalWrite(direction1,LOW);
-    digitalWrite(direction2,LOW);
-    digitalWrite(led1,LOW);
-    digitalWrite(led2,LOW);
-  }
+    doorAction(motorDown,switchBottom);
+    doorAction(motorUp,switchTop);
+}
+
+void motorDirection(int directionUp, int directionDown)
+{
+    digitalWrite(motorUp, directionUp);
+    digitalWrite(motorDown, directionDown);
+}
+void ledSwitch(int directionUp, int directionDown)
+{
+    digitalWrite(ledUp, directionUp);
+    digitalWrite(ledDown, directionDown);
+}
+
+void doorUp()
+{
+    motorDirection(HIGH,LOW);
+    ledSwitch(HIGH,LOW);
+}
+void doorDown()
+{
+    motorDirection(LOW,HIGH);
+    ledSwitch(LOW,HIGH);
+}
+void doorStop()
+{
+    motorDirection(LOW,LOW);
+    ledSwitch(LOW,LOW);
+}
+
+void doorAction(int motorDir, int switchPosition)
+{
+    if(digitalRead(motorDir) == HIGH) {
+        if(digitalRead(motorDown) == HIGH) {
+            Serial.println("Door going down");
+        } else {
+            Serial.println("Door going up");
+        }
+        while(digitalRead(switchPosition) == LOW && digitalRead(motorDir) == HIGH) {
+            Serial.println("Door closed");
+            doorStop();
+        }
+    }
 }
